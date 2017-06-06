@@ -113,8 +113,12 @@ public class MainWifiActivity extends AppCompatActivity {
         reciever = new WifiDirectBroadcastReciever(manager,channel,this);
     }
     public void search(View view){
-
         manager.discoverPeers(channel, new WifiP2pManager.ActionListener(){
+            private final String[] stringReason = {
+                    "ERROR",
+                    "P2P_UNSUPPORTED",
+                    "BUSY"
+            };
 
             @Override
             public void onSuccess() {
@@ -123,7 +127,7 @@ public class MainWifiActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(int reason) {
-                aletText.setText("Error: Code"+ reason);
+                aletText.setText("Error: "+ stringReason[reason]);
             }
         });
     }
