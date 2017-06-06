@@ -4,14 +4,14 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.net.InetAddress;
 
 public class MainWifiActivity extends AppCompatActivity {
     public TextView alertText;
@@ -23,6 +23,12 @@ public class MainWifiActivity extends AppCompatActivity {
     protected ArrayAdapter<String> wifiP2pArrayAdapter;
     // pozicija znotraj seznama
     private int position = 0;
+    ClientThread clientThread;
+    ServerThread serverThread;
+    InetAddress hostAddress;
+    InetAddress clientAddress = null;
+    String stringHostAddress;
+    boolean connected = false;
 
     // WifiDirect funkcije
     WifiDirect wifiDirect;
@@ -42,6 +48,7 @@ public class MainWifiActivity extends AppCompatActivity {
         // vezemo evente na seznam naprav
         wifiP2pArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         deviceListView.setAdapter(wifiP2pArrayAdapter);
+
         deviceListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
@@ -61,6 +68,7 @@ public class MainWifiActivity extends AppCompatActivity {
         });
         // - gumb za zacetek posiljanja
         fabRecord = (FloatingActionButton) findViewById(R.id.fabSpeak);
+        /*
         fabRecord.setOnTouchListener(new View.OnTouchListener(){
 
             @Override
@@ -68,18 +76,18 @@ public class MainWifiActivity extends AppCompatActivity {
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
                     //pressed
                     Log.d("bmo", "started client thread");
-                    //clientRunningThread.start();
+                    clientRunningThread.start();
 
                 }
                 if(event.getAction() == MotionEvent.ACTION_UP){
                     //released
                     Log.d("bmo", "stopped client thread");
-                    //clientRunningThread.interrupt();
+                    clientRunningThread.interrupt();
                     return false;
                 }
                 return true;
             }
-        });
+        });*/
     }
 
     @Override

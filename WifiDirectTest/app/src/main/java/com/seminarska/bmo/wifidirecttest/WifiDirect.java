@@ -17,7 +17,7 @@ import java.net.InetAddress;
 import static android.os.Looper.getMainLooper;
 
 /**
- * Created by tpecar on 6/6/17.
+ * Created by aljaz on 6/6/17.
  */
 
 public class WifiDirect {

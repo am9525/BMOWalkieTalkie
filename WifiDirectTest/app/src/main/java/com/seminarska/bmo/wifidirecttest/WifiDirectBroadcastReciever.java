@@ -85,7 +85,7 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
         // Respond to this device's wifi state changing
         }
     }
-    //Function called from main activity when the user selects an avalible peer
+    //Function called from main activity when the user selects an available peer
     public void connect(int position){
         //uses position to obtain the same name and address of the device to connect to
         WifiP2pConfig deviceConfig = configs.get(position);
