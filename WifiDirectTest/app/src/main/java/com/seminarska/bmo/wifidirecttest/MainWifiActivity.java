@@ -1,19 +1,15 @@
 package com.seminarska.bmo.wifidirecttest;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -24,15 +20,10 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Enumeration;
 
 public class MainWifiActivity extends AppCompatActivity {
-    public TextView aletText;
+    public TextView alertText;
     public ListView deviceListView;
 
     private FloatingActionButton fabSearch;
@@ -65,7 +56,7 @@ public class MainWifiActivity extends AppCompatActivity {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
-        aletText = (TextView) findViewById(R.id.alertText);
+        alertText = (TextView) findViewById(R.id.alertText);
         deviceListView = (ListView) findViewById(R.id.deviceList);
 
         wifiP2pArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
@@ -122,12 +113,12 @@ public class MainWifiActivity extends AppCompatActivity {
 
             @Override
             public void onSuccess() {
-                aletText.setText("Searching for peers...");
+                alertText.setText("Searching for peers...");
             }
 
             @Override
             public void onFailure(int reason) {
-                aletText.setText("Error: "+ stringReason[reason]);
+                alertText.setText("Error: Code"+ reason);
             }
         });
     }
@@ -270,7 +261,7 @@ public class MainWifiActivity extends AppCompatActivity {
     public void displayPeers(WifiP2pDeviceList peerList){
         wifiP2pArrayAdapter.clear();
         for(WifiP2pDevice device : peerList.getDeviceList()){
-            aletText.setText("Found Devices");
+            alertText.setText("Found Devices");
             wifiP2pArrayAdapter.add(device.deviceName + "\n" + device.deviceAddress);
         }
 
