@@ -1,5 +1,7 @@
 package com.seminarska.bmo.wifidirecttest;
 
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -30,13 +32,17 @@ public class MainWifiActivity extends AppCompatActivity {
     String stringHostAddress;
     boolean connected = false;
 
-    // WifiDirect funkcije
+    // low level manager, setup
     WifiDirect wifiDirect;
+    //
+    WifiDirectNetwork wifiDirectNetwork;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // inicializiramo WifiDirect
+        // inicializiaramo WifiDirect - omrezni del
         wifiDirect = new WifiDirect(this);
+        // inicializiramo WifiDirectNetwork - povezavni del
+        wifiDirectNetwork = new WifiDirectNetwork(this);
 
         // inicializiramo kontrolnike
         super.onCreate(savedInstanceState);
@@ -53,7 +59,7 @@ public class MainWifiActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
                 position = pos;
-                wifiDirect.reciever.connect(pos);
+                wifiDirect.connect(pos);
 
             }
         });
@@ -63,7 +69,7 @@ public class MainWifiActivity extends AppCompatActivity {
         fabSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                wifiDirect.search(v);
+                wifiDirect.search();
             }
         });
         // - gumb za zacetek posiljanja
@@ -113,5 +119,14 @@ public class MainWifiActivity extends AppCompatActivity {
     // ostale metode, ki so vezane na UI
     void makeToast(String text){
         Toast.makeText(this.getApplicationContext(), text, Toast.LENGTH_LONG).show();
+    }
+    void displayPeers(WifiP2pDeviceList peerList){
+        // pobrise seznam trenutno najdenih
+        wifiP2pArrayAdapter.clear();
+        for(WifiP2pDevice device : peerList.getDeviceList()){
+            alertText.setText("Found Devices");
+            wifiP2pArrayAdapter.add(device.deviceName + "\n" + device.deviceAddress);
+        }
+
     }
 }
