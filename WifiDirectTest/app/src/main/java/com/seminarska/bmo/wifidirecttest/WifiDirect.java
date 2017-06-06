@@ -8,7 +8,6 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -221,8 +220,5 @@ public class WifiDirect {
             mainWifiActivity.wifiP2pArrayAdapter.add(device.deviceName + "\n" + device.deviceAddress);
         }
 
-    }
-    void makeToast(String text){
-        Toast.makeText(mainWifiActivity.getApplicationContext(), text, Toast.LENGTH_LONG).show();
     }
 }

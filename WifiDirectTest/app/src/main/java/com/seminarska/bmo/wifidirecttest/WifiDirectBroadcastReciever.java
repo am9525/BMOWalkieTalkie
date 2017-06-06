@@ -97,7 +97,7 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
             @Override
             public void onSuccess() {
                 //activity.alertText.setText("Connecting...");
-                activity.wifiDirect.makeToast("Connecting...");
+                activity.makeToast("Connecting...");
                 Log.d("bmo", "Connecting...");
 
             }
@@ -105,7 +105,7 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
             @Override
             public void onFailure(int reason) {
                 //activity.alertText.setText("Connection failed: "+reason);
-                activity.wifiDirect.makeToast("Connection failed: "+reason);
+                activity.makeToast("Connection failed: "+reason);
                 Log.d("bmo", "Connection failed: "+reason);
             }
         });

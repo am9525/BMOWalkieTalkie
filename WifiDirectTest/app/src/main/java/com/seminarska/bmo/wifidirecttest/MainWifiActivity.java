@@ -11,6 +11,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainWifiActivity extends AppCompatActivity {
     public TextView alertText;
@@ -99,5 +100,10 @@ public class MainWifiActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(wifiDirect.reciever);
+    }
+
+    // ostale metode, ki so vezane na UI
+    void makeToast(String text){
+        Toast.makeText(this.getApplicationContext(), text, Toast.LENGTH_LONG).show();
     }
 }
