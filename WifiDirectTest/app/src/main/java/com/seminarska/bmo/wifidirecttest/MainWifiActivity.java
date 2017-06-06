@@ -6,6 +6,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.InetAddress;
+import java.util.concurrent.ExecutionException;
 
 public class MainWifiActivity extends AppCompatActivity {
     public TextView alertText;
@@ -21,6 +23,7 @@ public class MainWifiActivity extends AppCompatActivity {
 
     protected FloatingActionButton fabSearch;
     protected FloatingActionButton fabRecord;
+    protected FloatingActionButton fabSelfTest;
 
     protected ArrayAdapter<String> wifiP2pArrayAdapter;
     // pozicija znotraj seznama
@@ -34,8 +37,11 @@ public class MainWifiActivity extends AppCompatActivity {
 
     // low level manager, setup
     WifiDirect wifiDirect;
-    //
+    // UDP povezavni del (handshake, tvorba povezav)
     WifiDirectNetwork wifiDirectNetwork;
+
+    // audio
+    Audio audio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +49,9 @@ public class MainWifiActivity extends AppCompatActivity {
         wifiDirect = new WifiDirect(this);
         // inicializiramo WifiDirectNetwork - povezavni del
         wifiDirectNetwork = new WifiDirectNetwork(this);
+
+        // inicializiramo Audio del
+        audio = new Audio();
 
         // inicializiramo kontrolnike
         super.onCreate(savedInstanceState);
@@ -94,6 +103,23 @@ public class MainWifiActivity extends AppCompatActivity {
                 return true;
             }
         });*/
+        // gumb za selftest zvoka
+        fabSelfTest = (FloatingActionButton) findViewById(R.id.fabSelfTest);
+        fabSelfTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("bmo_audio","start");
+                try {
+                    audio.recordAudio();
+                    audio.playAudio();
+                }
+                catch (InterruptedException | ExecutionException e) {
+                    Log.e("bmo_audio", "Got exception during audio selftest: "+e.toString());
+                    makeToast("Audio selftest failed");
+                }
+                makeToast("Audio selftest success");
+            }
+        });
     }
 
     @Override
