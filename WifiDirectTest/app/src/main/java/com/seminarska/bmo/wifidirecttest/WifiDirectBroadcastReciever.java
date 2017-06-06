@@ -10,10 +10,8 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,10 +41,10 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)){
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED){
-                activity.aletText.setText("WiFi-Direct Enabled");
+                activity.alertText.setText("WiFi-Direct Enabled");
             }
             else{
-                activity.aletText.setText("WiFi-Direct Disabled");
+                activity.alertText.setText("WiFi-Direct Disabled");
             }
         }
         else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)){
@@ -61,7 +59,7 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
 
                         peerList.clear();
                         peerList.addAll(peers.getDeviceList());
-                        activity.displayPeers(peers);
+                        activity.wifiDirect.displayPeers(peers);
 
                         for(WifiP2pDevice device : peerList){
                             WifiP2pConfig deviceConfig = new WifiP2pConfig();
@@ -77,7 +75,7 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
         // Respond to new connection or disconnections
             if(manager == null)
                 return;
-            NetworkInfo netInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+            NetworkInfo netInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
             if(netInfo.isConnected()){
 
                 manager.requestConnectionInfo(channel, infoListener);
@@ -98,16 +96,16 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
 
             @Override
             public void onSuccess() {
-                //activity.aletText.setText("Connecting...");
-                activity.makeToast("Connecting...");
+                //activity.alertText.setText("Connecting...");
+                activity.wifiDirect.makeToast("Connecting...");
                 Log.d("bmo", "Connecting...");
 
             }
 
             @Override
             public void onFailure(int reason) {
-                //activity.aletText.setText("Connection failed: "+reason);
-                activity.makeToast("Connection failed: "+reason);
+                //activity.alertText.setText("Connection failed: "+reason);
+                activity.wifiDirect.makeToast("Connection failed: "+reason);
                 Log.d("bmo", "Connection failed: "+reason);
             }
         });
@@ -118,14 +116,14 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver{
             InetAddress groupOwnerAddress = info.groupOwnerAddress;
             if(info.groupFormed){
                 if(info.isGroupOwner){
-                    activity.aletText.setText("Connected as Host");
+                    activity.alertText.setText("Connected as Host");
                     Log.d("bmo", "HOST");
-                    activity.connected(groupOwnerAddress, true);
+                    activity.wifiDirect.connected(groupOwnerAddress, true);
                 }
                 else{
-                    activity.aletText.setText("Connected as Client");
+                    activity.alertText.setText("Connected as Client");
                     Log.d("bmo", "CLIENT");
-                    activity.connected(groupOwnerAddress, false);
+                    activity.wifiDirect.connected(groupOwnerAddress, false);
                 }
             }
         }
