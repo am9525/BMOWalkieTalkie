@@ -17,8 +17,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.InetAddress;
-
 public class MainWifiActivity extends AppCompatActivity {
     public TextView alertText;
     public ListView deviceListView;
@@ -28,14 +26,6 @@ public class MainWifiActivity extends AppCompatActivity {
     protected FloatingActionButton fabSelfTest;
 
     protected ArrayAdapter<String> wifiP2pArrayAdapter;
-    // pozicija znotraj seznama
-    private int position = 0;
-    ClientThread clientThread;
-    ServerThread serverThread;
-    InetAddress hostAddress;
-    InetAddress clientAddress = null;
-    String stringHostAddress;
-    boolean connected = false;
 
     // low level manager, setup
     WifiDirect wifiDirect;
@@ -44,6 +34,8 @@ public class MainWifiActivity extends AppCompatActivity {
 
     // audio
     Audio audio;
+    // (zaenkrat) buffer za audio
+    short audioBuffer[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +46,7 @@ public class MainWifiActivity extends AppCompatActivity {
 
         // inicializiramo Audio del
         audio = new Audio();
+        audioBuffer = new short[audio.MIN_BYTES * 50];
 
         // inicializiramo kontrolnike
         super.onCreate(savedInstanceState);
@@ -69,9 +62,7 @@ public class MainWifiActivity extends AppCompatActivity {
         deviceListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                position = pos;
                 wifiDirect.connect(pos);
-
             }
         });
         // vezemo evente na gumbe
@@ -130,10 +121,8 @@ public class MainWifiActivity extends AppCompatActivity {
 
                             audio.startRecording();
                             int bytesRead;
-                            do {
-                                bytesRead = 0;
-                                recordingPointer += (bytesRead = audio.recordAudio(recordingPointer));
-                            }
+                            do
+                                recordingPointer += (bytesRead = audio.recordAudio(audioBuffer, recordingPointer));
                             while(recording && bytesRead > 0);
                             audio.stopRecording();
 
@@ -147,16 +136,9 @@ public class MainWifiActivity extends AppCompatActivity {
 
                             audio.startPlayback();
                             int bytesWritten;
-                            do {
-                                bytesWritten = 0;
-                                playbackPointer += (bytesWritten = audio.playAudio(playbackPointer));
-                            }
+                            do
+                                playbackPointer += (bytesWritten = audio.playAudio(audioBuffer, playbackPointer));
                             while(playbackPointer < recordingPointer && bytesWritten > 0);
-
-                            // dummy pisanje, samo zato da AudioTrack prebere cel prejsnji buffer, to enoto pa
-                            // ignorira
-                            // https://stackoverflow.com/questions/22058290/android-audiotrack-stream-cuts-out-early
-                            audio.playAudio(0);
                             audio.stopPlayback();
 
                             // vklopimo gumb za snemanje
@@ -197,6 +179,13 @@ public class MainWifiActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(wifiDirect.reciever);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // zapremo audio resurse
+        audio.release();
     }
 
     // ostale metode, ki so vezane na UI

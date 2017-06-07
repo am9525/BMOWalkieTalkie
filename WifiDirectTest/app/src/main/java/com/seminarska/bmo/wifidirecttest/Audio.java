@@ -43,11 +43,8 @@ import android.util.Log;
 
 class Audio {
     // hardcodirane spremenljivke za snemanje
-    private final int SAMPLE_RATE = 8000;
-    private final int MIN_BYTES;                // minimalno B za delujoc buffer
-
-    private final int BUF_UNITS = 100;          // mnozitelj enote bufferja (da dobimo cel buffer)
-    private final int WHOLE_BUF_BYTES;
+    final int SAMPLE_RATE = 8000;
+    final int MIN_BYTES;                // minimalno B za delujoc buffer
 
     // buffer za snemanje (ki se bo kasneje tudi poslal)
     private short buffer[];
@@ -57,6 +54,10 @@ class Audio {
     // audio sink
     private AudioTrack audioTrack;
 
+    /**
+     * Konstruktor razreda.
+     * Inicializira audio source, sink.
+     */
     Audio() {
         MIN_BYTES = AudioTrack.getMinBufferSize(
                 SAMPLE_RATE,
@@ -68,17 +69,14 @@ class Audio {
         );
         if(MIN_BYTES == AudioTrack.ERROR || MIN_BYTES == AudioTrack.ERROR_BAD_VALUE) {
             Log.e("bmo_audio", "Failed to init Audio class");
-            WHOLE_BUF_BYTES = 0;
             return;
         }
-        WHOLE_BUF_BYTES = MIN_BYTES * BUF_UNITS;   // stevilo B celotnega bufferja
-
         // vzpostavimo audio source
         record = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                WHOLE_BUF_BYTES);
+                MIN_BYTES);
         if(record.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e("bmo_audio", "Failed to init recording");
             return;
@@ -96,37 +94,67 @@ class Audio {
             Log.e("bmo_audio", "Failed to init playback");
             return;
         }
-
-        Log.i("bmo_audio", String.format("%d B allocated for audio buffer", WHOLE_BUF_BYTES));
-        buffer = new short[WHOLE_BUF_BYTES];
     }
 
+    /*--------------------------------------------------------------------------------------------*/
+    /**
+     * Zahteva zacetek zajemanja vzorcev.
+     * Potrebno klicati pred recordAudio.
+     */
     void startRecording() {
         record.startRecording();
     }
+
+    /**
+     * Zahteva konec zajemanja vzorcev.
+     * Priporoceno, da se klice po prenehanju intenzivne uporabe recordAudio.
+     */
     void stopRecording() {
         record.stop();
     }
-    int recordAudio(int bufferOffset) {
+
+    /**
+     * Zajame vzorce iz mikrofona.
+     * @param buffer v katerega pisemo vzorce
+     * @param bufferOffset kazalec znotraj bufferja, v katerega zacnemo pisati
+     * @return stevilo prebranih byte-ov (iz vhoda)
+     */
+    int recordAudio(short buffer[], int bufferOffset) {
         int bytesRead = 0;
-        if(bufferOffset+MIN_BYTES < WHOLE_BUF_BYTES)
+        if(bufferOffset+MIN_BYTES < buffer.length)
             bytesRead = record.read(buffer, bufferOffset, MIN_BYTES);
         return bytesRead;
     }
-
+    /*--------------------------------------------------------------------------------------------*/
+    /**
+     * Zahteva zacetek predvajanja vzorcev.
+     * Potrebno klicati pred playAudio.
+     */
     void startPlayback() {
         audioTrack.play();
     }
+
+    /**
+     * Zahteva konec predvajanaj vzorcev.
+     * Priporoceno, da se klice po prenehanju intenzivne uporabe playAudio.
+     */
     void stopPlayback() {
         audioTrack.flush();
     }
-    int playAudio(int bufferOffset) {
+
+    /**
+     * Zapise vzorce v izhodno napravo (predvidoma zvocnik)
+     * @param buffer iz katerega beremo vzorce
+     * @param bufferOffset kazalec znotraj bufferja, od katerega naprej zacnemo brati
+     * @return stevilo zapisanih byte-ov (v izhod)
+     */
+    int playAudio(short buffer[], int bufferOffset) {
         int bytesWritten = 0;
-        if (bufferOffset+MIN_BYTES < WHOLE_BUF_BYTES)
+        if (bufferOffset+MIN_BYTES < buffer.length)
             bytesWritten = audioTrack.write(buffer, bufferOffset, MIN_BYTES);
         return bytesWritten;
     }
-
+    /*--------------------------------------------------------------------------------------------*/
     // ko dokoncno prenehamo uporabljati source/sink
     void release() {
         record.release();
