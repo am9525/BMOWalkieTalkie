@@ -111,6 +111,7 @@ public class MainWifiActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Log.i("bmo_audio", "start");
 
+                fabSelfTest.setEnabled(false);
                 // naredimo se en thread tu, da asinhrono caka na audio taske
                 new AsyncTask<Void, Void, Boolean>() {
                     @Override
@@ -127,6 +128,7 @@ public class MainWifiActivity extends AppCompatActivity {
                     @Override
                     protected void onPostExecute(Boolean result) {
                         makeToast("Audio selftest " + (result ? "succeded" : "failed"));
+                        fabSelfTest.setEnabled(true);
                     }
                 }.execute();
             }

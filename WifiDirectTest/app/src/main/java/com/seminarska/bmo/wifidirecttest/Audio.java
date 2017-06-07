@@ -51,13 +51,9 @@ import java.util.concurrent.FutureTask;
 public class Audio {
     // hardcodirane spremenljivke za snemanje
     private final int SAMPLE_RATE = 8000;
-    private final int MIN_BYTES;
+    private final int MIN_BYTES;                // minimalno B za delujoc buffer
 
-    private final int MIN_BUF_UNITS = 1;   // mnozitelj minimalne kapacitete bufferja
-                                            // to je 1 enota bufferja, ki se bere/pise v i/o
-    private final int BUF_UNIT_BYTES;
-
-    private final int BUF_UNITS = 100;       // mnozitelj enote bufferja (da dobimo cel buffer)
+    private final int BUF_UNITS = 100;          // mnozitelj enote bufferja (da dobimo cel buffer)
     private final int WHOLE_BUF_BYTES;
 
     // buffer za snemanje (ki se bo kasneje tudi poslal)
@@ -77,12 +73,10 @@ public class Audio {
         );
         if(MIN_BYTES == AudioTrack.ERROR || MIN_BYTES == AudioTrack.ERROR_BAD_VALUE) {
             Log.e("bmo_audio", "Failed to init Audio class");
-            BUF_UNIT_BYTES = 0;
             WHOLE_BUF_BYTES = 0;
             return;
         }
-        BUF_UNIT_BYTES = MIN_BYTES * MIN_BUF_UNITS;     // stevilo B enote snemanja/predvajanja
-        WHOLE_BUF_BYTES = BUF_UNIT_BYTES * BUF_UNITS;   // stevilo B celotnega bufferja
+        WHOLE_BUF_BYTES = MIN_BYTES * BUF_UNITS;   // stevilo B celotnega bufferja
 
         Log.i("bmo_audio", String.format("%d B allocated for audio buffer", WHOLE_BUF_BYTES));
         buffer = new short[WHOLE_BUF_BYTES];
@@ -108,7 +102,7 @@ public class Audio {
 
                 int bytesRead = 0;
                 while(bytesRead < WHOLE_BUF_BYTES)
-                    bytesRead += record.read(buffer, bytesRead, BUF_UNIT_BYTES);
+                    bytesRead += record.read(buffer, bytesRead, MIN_BYTES);
 
                 record.stop();
                 record.release();
@@ -136,7 +130,7 @@ public class Audio {
                         SAMPLE_RATE,
                         AudioFormat.CHANNEL_OUT_MONO,
                         AudioFormat.ENCODING_PCM_16BIT,
-                        BUF_UNIT_BYTES, // enota, ki jo prenese v predvajanje
+                        MIN_BYTES, // enota, ki jo prenese v predvajanje
                         AudioTrack.MODE_STREAM
                 );
                 if(audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
@@ -145,15 +139,12 @@ public class Audio {
                 }
                 audioTrack.play();
                 int bytesWritten = 0;
-                for(int i=0; i<2; i++) {
-                    bytesWritten = 0;
-                    while (bytesWritten < WHOLE_BUF_BYTES)
-                        bytesWritten += audioTrack.write(buffer, bytesWritten, BUF_UNIT_BYTES);
-                }
+                while (bytesWritten < WHOLE_BUF_BYTES)
+                    bytesWritten += audioTrack.write(buffer, bytesWritten, MIN_BYTES);
                 // dummy pisanje, samo zato da AudioTrack prebere cel prejsnji buffer, to enoto pa
                 // ignorira
                 // https://stackoverflow.com/questions/22058290/android-audiotrack-stream-cuts-out-early
-                audioTrack.write(buffer, 0, BUF_UNIT_BYTES);
+                audioTrack.write(buffer, 0, MIN_BYTES);
 
                 audioTrack.flush();
                 audioTrack.release();
