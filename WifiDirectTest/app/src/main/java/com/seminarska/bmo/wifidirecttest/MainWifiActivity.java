@@ -3,11 +3,13 @@ package com.seminarska.bmo.wifidirecttest;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -16,7 +18,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.net.InetAddress;
-import java.util.concurrent.ExecutionException;
 
 public class MainWifiActivity extends AppCompatActivity {
     public TextView alertText;
@@ -106,36 +107,74 @@ public class MainWifiActivity extends AppCompatActivity {
         });*/
         // gumb za selftest zvoka
         fabSelfTest = (FloatingActionButton) findViewById(R.id.fabSelfTest);
-        fabSelfTest.setOnClickListener(new View.OnClickListener() {
+        fabSelfTest.setOnTouchListener(new View.OnTouchListener() {
+            // indikator ali snemamo ali ne
+            boolean recording;
+
+            // handler za ui
+            Handler uiHandler = new Handler(Looper.getMainLooper());
+
             @Override
-            public void onClick(View v) {
-                Log.i("bmo_audio", "start");
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    //pressed
+                    Log.d("bmo", "started client thread");
+                    recording = true;
+                    new Thread(new Runnable() {
+                        int recordingPointer=0;
+                        int playbackPointer=0;
 
-                fabSelfTest.setEnabled(false);
-                // naredimo se en thread tu, da asinhrono caka na audio taske
-                new AsyncTask<Void, Void, Boolean>() {
-                    @Override
-                    protected Boolean doInBackground(Void... params) {
-                        try {
-                            Log.i("bmo_audio", "audio record start");
-                            Log.i("bmo_audio_record", Integer.toString(audio.recordAudio()));
-                            Log.i("bmo_audio", "audio record end");
+                        @Override
+                        public void run() {
+                            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
-                            Log.i("bmo_audio", "audio play start");
-                            Log.i("bmo_audio_play", Integer.toString(audio.playAudio()));
-                            Log.i("bmo_audio", "audio play end");
-                            return true;
-                        } catch (InterruptedException | ExecutionException e) {
-                            Log.e("bmo_audio", "Got exception during audio selftest: " + e.toString());
-                            return false;
+                            audio.startRecording();
+                            int bytesRead;
+                            do {
+                                bytesRead = 0;
+                                recordingPointer += (bytesRead = audio.recordAudio(recordingPointer));
+                            }
+                            while(recording && bytesRead > 0);
+                            audio.stopRecording();
+
+                            // izklopimo gumb za snemanje
+                            uiHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    fabSelfTest.setEnabled(false);
+                                }
+                            });
+
+                            audio.startPlayback();
+                            int bytesWritten;
+                            do {
+                                bytesWritten = 0;
+                                playbackPointer += (bytesWritten = audio.playAudio(playbackPointer));
+                            }
+                            while(playbackPointer < recordingPointer && bytesWritten > 0);
+
+                            // dummy pisanje, samo zato da AudioTrack prebere cel prejsnji buffer, to enoto pa
+                            // ignorira
+                            // https://stackoverflow.com/questions/22058290/android-audiotrack-stream-cuts-out-early
+                            audio.playAudio(0);
+                            audio.stopPlayback();
+
+                            // vklopimo gumb za snemanje
+                            uiHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    fabSelfTest.setEnabled(true);
+                                }
+                            });
                         }
-                    }
-                    @Override
-                    protected void onPostExecute(Boolean result) {
-                        makeToast("Audio selftest " + (result ? "succeded" : "failed"));
-                        fabSelfTest.setEnabled(true);
-                    }
-                }.execute();
+                    }).start();
+                }
+                if(event.getAction() == MotionEvent.ACTION_UP){
+                    //released
+                    Log.d("bmo", "stopped client thread");
+                    recording = false;
+                }
+                return true;
             }
         });
     }
