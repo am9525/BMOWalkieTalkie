@@ -29,7 +29,7 @@ public class ClientThread implements Runnable {
     private MainWifiActivity mainWifiActivity;
 
     public ClientThread(InetAddress hostAddress, int port, MainWifiActivity mainWifiActivity) {
-        sendData = new byte[mainWifiActivity.audio.MIN_BYTES * 10];
+        sendData = new byte[mainWifiActivity.audio.MIN_BYTES * WifiDirectNetwork.NETWORK_UNIT__MINIMAL_BUFFER_UNITS];
         audioData = new short[sendData.length / 2];
 
         this.hostAddress = hostAddress;
@@ -68,7 +68,7 @@ public class ClientThread implements Runnable {
                         if (e.getMessage() == null) {
                             Log.e("Set Socket", "Unknown message");
                         } else {
-                            Log.e("Set Socket", e.getMessage());
+                            Log.e("Set Socket client", e.getMessage());
                         }
                     }
                     try {
@@ -103,6 +103,12 @@ public class ClientThread implements Runnable {
                         else
                             Log.e("Set Socket", e.getMessage());
                     }
+                }
+                if(Thread.currentThread().isInterrupted()) {
+                    Log.i("bmo_client", "was interrupted!");
+                    if(socket!=null)
+                        socket.close();
+                    return;
                 }
             }
         }

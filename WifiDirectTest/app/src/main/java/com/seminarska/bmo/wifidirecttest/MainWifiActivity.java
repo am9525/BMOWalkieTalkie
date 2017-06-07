@@ -2,7 +2,6 @@ package com.seminarska.bmo.wifidirecttest;
 
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -90,14 +89,7 @@ public class MainWifiActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        wifiDirect.manager.cancelConnect(wifiDirect.channel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-            }
-            @Override
-            public void onFailure(int reason) {
-            }
-        });
+        wifiDirect.disconnect();
         registerReceiver(wifiDirect.reciever, wifiDirect.intentFilter);
     }
 

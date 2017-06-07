@@ -28,6 +28,8 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver {
     List<WifiP2pDevice> peerList;
     List<WifiP2pConfig> configs;
 
+    boolean firstConnect = true;
+
     WifiDirect wifiDirect;
 
     public WifiDirectBroadcastReciever(WifiDirect wifiDirect, MainWifiActivity activity){
@@ -96,16 +98,25 @@ public class WifiDirectBroadcastReciever extends BroadcastReceiver {
             // Respond to new connection or disconnections
             if(wifiDirect.manager == null)
                 return;
-
             NetworkInfo netInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
-            if(netInfo.isConnected()){
+            Log.i("bmo_p2pchg", String.format("%s %s", netInfo.isConnected(), firstConnect));
+            if(netInfo.isConnected() && firstConnect){
+                firstConnect = false;
                 // tu smo se povezali na P2P omrezje
 
                 // znotraj infoListener (ki se prav tako prozi na event, ki ga tvori WifiP2pManager)
                 // ugotovimo kateri del povezave smo (ali smo jo mi sprejeli ali zahtevali)
                 // ter se na podlagi tega doloci kdo je host, client
                 wifiDirect.manager.requestConnectionInfo(wifiDirect.channel, infoListener);
+            }
+            // ta del je za client
+            if(!netInfo.isConnected()) {
+                firstConnect = true;
+                if(activity.wifiDirectNetwork.runningServerThread != null)
+                    activity.wifiDirectNetwork.runningServerThread.interrupt();
+                if(activity.wifiDirectNetwork.runningClientThread != null)
+                    activity.wifiDirectNetwork.runningClientThread.interrupt();
             }
         }
         else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {

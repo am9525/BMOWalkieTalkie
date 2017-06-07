@@ -21,13 +21,12 @@ public class ServerThread implements Runnable {
     int recieveCount = 0;
 
     byte[] recievedData;
-    //ByteBuffer dataBuffer;
     short[] audioData;
 
     MainWifiActivity mainWifiActivity;
 
     public ServerThread(int port, MainWifiActivity mainWifiActivity) {
-        recievedData = new byte[mainWifiActivity.audio.MIN_BYTES * 10];
+        recievedData = new byte[mainWifiActivity.audio.MIN_BYTES * WifiDirectNetwork.NETWORK_UNIT__MINIMAL_BUFFER_UNITS];
         // potrebno zaradi pretvorbe
         // https://stackoverflow.com/questions/11930385/how-can-i-get-short-from-a-bytebuffer
         //dataBuffer = ByteBuffer.allocateDirect(mainWifiActivity.audio.MIN_BYTES);
@@ -53,7 +52,7 @@ public class ServerThread implements Runnable {
                 if (e.getMessage() == null) {
                     Log.e("Set Socket", "Unknown message");
                 } else {
-                    Log.e("Set Socket", e.getMessage());
+                    Log.e("Set Socket server", e.getMessage());
                 }
             }
             DatagramPacket recievePacket = new DatagramPacket(recievedData, recievedData.length);
@@ -89,7 +88,12 @@ public class ServerThread implements Runnable {
                     continue;
                 }
             }
-
+            if(Thread.currentThread().isInterrupted()) {
+                Log.i("bmo_server", "was interrupted!");
+                if(socket!=null)
+                    socket.close();
+                return;
+            }
         }
     }
 }

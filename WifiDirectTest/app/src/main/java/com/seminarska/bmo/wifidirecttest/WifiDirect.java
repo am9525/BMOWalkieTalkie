@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
@@ -11,7 +12,7 @@ import static android.os.Looper.getMainLooper;
 
 /**
  * Created by aljaz on 6/6/17.
- *
+ * <p>
  * Low level inicializacija za WifiDirect + podporni objekti za iskanje ter povezavo na omrezje.
  */
 
@@ -43,8 +44,8 @@ public class WifiDirect {
      * Zahteva iskanje novih sosednjih P2P vozlisc.
      * Napolni WifiDirectBroadcastReciever.peerList ter .configs seznama.
      */
-    void search(){
-        manager.discoverPeers(channel, new WifiP2pManager.ActionListener(){
+    void search() {
+        manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             private final String[] stringReason = {
                     "ERROR",
                     "P2P_UNSUPPORTED",
@@ -58,22 +59,24 @@ public class WifiDirect {
 
             @Override
             public void onFailure(int reason) {
-                mainWifiActivity.alertText.setText("Error: "+ stringReason[reason]);
+                mainWifiActivity.alertText.setText("Error: " + stringReason[reason]);
                 Log.e("bmo", "Failed to discover peers");
             }
         });
     }
+
     /**
      * Se poveze na vozlisce, specificirano pod pozicijo v seznamu vseh najdenih P2P vozlisc.
+     *
      * @param position pozicija znotraj WifiDirectBroadcastReciever seznama
      */
-    public void connect(int position){
+    public void connect(int position) {
         //uses position to obtain the same name and address of the device to connect to
         WifiP2pConfig deviceConfig = reciever.configs.get(position);
         selectedPeer = reciever.peerList.get(position);
 
         //connects the two devices
-        manager.connect(channel, deviceConfig, new WifiP2pManager.ActionListener(){
+        manager.connect(channel, deviceConfig, new WifiP2pManager.ActionListener() {
 
             @Override
             public void onSuccess() {
@@ -85,9 +88,43 @@ public class WifiDirect {
             @Override
             public void onFailure(int reason) {
                 //activity.alertText.setText("Connection failed: "+reason);
-                reciever.activity.makeToast("Connection failed: "+reason);
-                Log.d("bmo", "Connection failed: "+reason);
+                reciever.activity.makeToast("Connection failed: " + reason);
+                Log.d("bmo", "Connection failed: " + reason);
             }
         });
+    }
+
+    /**
+     * Odstrani nas iz obstojecega omrezja.
+     */
+    public void disconnect() {
+        if (manager != null && channel != null) {
+
+
+            manager.requestGroupInfo(channel, new WifiP2pManager.GroupInfoListener() {
+                @Override
+                public void onGroupInfoAvailable(WifiP2pGroup group) {
+                    if (group != null && manager != null && channel != null
+                            && group.isGroupOwner()) {
+                        manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+                            @Override
+                            public void onSuccess() {
+                                Log.d("bmo", "removeGroup onSuccess -");
+                                reciever.firstConnect = true;
+                                if(mainWifiActivity.wifiDirectNetwork.runningServerThread != null)
+                                    mainWifiActivity.wifiDirectNetwork.runningServerThread.interrupt();
+                                if(mainWifiActivity.wifiDirectNetwork.runningClientThread != null)
+                                    mainWifiActivity.wifiDirectNetwork.runningClientThread.interrupt();
+                            }
+
+                            @Override
+                            public void onFailure(int reason) {
+                                Log.d("bmo", "removeGroup onFailure -" + reason);
+                            }
+                        });
+                    }
+                }
+            });
+        }
     }
 }

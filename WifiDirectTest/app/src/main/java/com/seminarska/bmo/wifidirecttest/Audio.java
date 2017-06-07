@@ -46,9 +46,6 @@ class Audio {
     final int SAMPLE_RATE = 8000;
     final int MIN_BYTES;                // minimalno B za delujoc buffer
 
-    // buffer za snemanje (ki se bo kasneje tudi poslal)
-    private short buffer[];
-
     // audio source
     private AudioRecord record;
     // audio sink

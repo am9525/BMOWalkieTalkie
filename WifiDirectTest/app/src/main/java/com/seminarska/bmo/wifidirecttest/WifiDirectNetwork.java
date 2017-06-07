@@ -15,11 +15,21 @@ import java.net.InetAddress;
  */
 
 public class WifiDirectNetwork {
+    // koliko minimalnih enot sestavlja eno nedeljivo enoto, ki se posilja skozi omrezje
+    static final int NETWORK_UNIT__MINIMAL_BUFFER_UNITS = 5;
+    // koliko (mreznih) enot se buffera za posiljanje/prejemanje
+    static final int IO_BUFFER__NETWORK_UNITS = 20;
+    // koliko (mreznih) enot mora server prejeti, predno zacne predvajanje
+    static final int IO_BUFFER__BUFFERED_NETWORK_UNITS = 5;
+
     // referenca na activity - vsi kontrolniki
     private MainWifiActivity mainWifiActivity;
 
     private ClientThread clientThread;
+    public Thread runningClientThread;
+
     private ServerThread serverThread;
+    public Thread runningServerThread;
 
     private int hostPort = 8888;
     private int clientPort = 8889;
@@ -76,7 +86,7 @@ public class WifiDirectNetwork {
                             String stringData = new String(recievePacket.getData(), 0, recievePacket.getLength());
                             Log.e("bmo", "recieved Packet, contained " + stringData);
 
-                            if (clientAddress == null) {
+                            if (clientAddress == null && stringData.equals(HANDSHAKE)) {
                                 clientAddress = recievePacket.getAddress();
                                 Log.e("bmo", "Packet was recieved from" + clientAddress + "Sending back response");
                                 break;
@@ -101,11 +111,15 @@ public class WifiDirectNetwork {
                 @Override
                 protected void onPostExecute(InetAddress inetAddress) {
                     clientThread = new ClientThread(inetAddress, clientPort, mainWifiActivity);
-                    new Thread(clientThread).start();
+
+                    runningClientThread = new Thread(clientThread);
+                    runningClientThread.start();
+
                     super.onPostExecute(inetAddress);
                     //start the server thread
                     serverThread = new ServerThread(hostPort, mainWifiActivity);
-                    new Thread(serverThread).start();
+                    runningServerThread = new Thread(serverThread);
+                    runningServerThread.start();
 
                     Log.i("bmo","Connected as host!");
                 }
@@ -171,11 +185,13 @@ public class WifiDirectNetwork {
                 protected void onPostExecute(Void result) {
                     super.onPostExecute(result);
                     clientThread = new ClientThread(hostAddress, hostPort, mainWifiActivity);
-                    new Thread(clientThread).start();
+                    runningClientThread = new Thread(clientThread);
+                    runningClientThread.start();
+
                     //start the server thread
                     serverThread = new ServerThread(clientPort, mainWifiActivity);
-                    new Thread(serverThread).start();
-
+                    runningServerThread = new Thread(serverThread);
+                    runningServerThread.start();
                     Log.i("bmo", "Connected as client!");
                 }
             }.execute();
