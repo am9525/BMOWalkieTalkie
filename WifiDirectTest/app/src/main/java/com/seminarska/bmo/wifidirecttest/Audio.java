@@ -69,7 +69,7 @@ public class Audio {
 
                 // zaenkrat direktno, izkaze se, da ce zelimo kompresijo, moramo poslati frame
                 // skozi MediaCodec
-                AudioFormat.ENCODING_PCM_8BIT
+                AudioFormat.ENCODING_PCM_16BIT
         );
         if(MIN_BYTES == AudioTrack.ERROR || MIN_BYTES == AudioTrack.ERROR_BAD_VALUE) {
             Log.e("bmo_audio", "Failed to init Audio class");
@@ -83,7 +83,6 @@ public class Audio {
     }
 
     public int recordAudio() throws InterruptedException, ExecutionException {
-        Log.i("bmo_audio", "audio record start");
         FutureTask<Integer> recordTask = new FutureTask<Integer>(new Callable<Integer>(){
             @Override
             public Integer call() throws Exception {
@@ -112,14 +111,12 @@ public class Audio {
         });
         threadPool.submit(recordTask);
 
-        Log.i("bmo_audio", "audio record end");
         // pocakamo ter poberemo rezultat (v tem primeru se nafila buffer, nazaj pa dobimo
         // stevilo dobljenih byte-ov, ki so v tem primeru enakovredni samplom)
         return recordTask.get();
     }
 
     public int playAudio() throws InterruptedException, ExecutionException {
-        Log.i("bmo_audio", "audio play start");
         FutureTask<Integer> playTask = new FutureTask<Integer>(new Callable<Integer>(){
             @Override
             public Integer call() throws Exception {
@@ -154,7 +151,6 @@ public class Audio {
         });
         threadPool.submit(playTask);
 
-        Log.i("bmo_audio", "audio play end");
         // pocakamo ter poberemo rezultat (stevilo predvajanih byte-ov)
         return playTask.get();
     }

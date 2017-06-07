@@ -117,8 +117,13 @@ public class MainWifiActivity extends AppCompatActivity {
                     @Override
                     protected Boolean doInBackground(Void... params) {
                         try {
+                            Log.i("bmo_audio", "audio record start");
                             Log.i("bmo_audio_record", Integer.toString(audio.recordAudio()));
+                            Log.i("bmo_audio", "audio record end");
+
+                            Log.i("bmo_audio", "audio play start");
                             Log.i("bmo_audio_play", Integer.toString(audio.playAudio()));
+                            Log.i("bmo_audio", "audio play end");
                             return true;
                         } catch (InterruptedException | ExecutionException e) {
                             Log.e("bmo_audio", "Got exception during audio selftest: " + e.toString());
