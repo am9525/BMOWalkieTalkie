@@ -14,16 +14,19 @@ import java.net.InetAddress;
 public class ServerThread implements Runnable {
 
     DatagramSocket socket;
-
     int port;
-
-    int recieveCount = 0;
-    byte[] recievedData = new byte[64];
-
     InetAddress clientAddress;
+    int recieveCount = 0;
 
-    public ServerThread(int port) {
+    byte[] recievedData;
+
+    MainWifiActivity mainWifiActivity;
+
+    public ServerThread(int port, MainWifiActivity mainWifiActivity) {
+        recievedData = new byte[mainWifiActivity.audio.MIN_BYTES];
+
         this.port = port;
+        this.mainWifiActivity = mainWifiActivity;
     }
 
     @Override
@@ -35,21 +38,27 @@ public class ServerThread implements Runnable {
                     socket.setSoTimeout(1000);
                 }
             } catch (IOException e) {
+                mainWifiActivity.networkIndicators.setHostIndication(mainWifiActivity.networkIndicators.dropoutColor);
+
                 if (e.getMessage() == null) {
                     Log.e("Set Socket", "Unknown message");
                 } else {
                     Log.e("Set Socket", e.getMessage());
                 }
             }
+            mainWifiActivity.networkIndicators.setHostIndication(mainWifiActivity.networkIndicators.activeColor);
             DatagramPacket recievePacket = new DatagramPacket(recievedData, recievedData.length);
 
-            Log.e("bmo", "Waiting for packet");
+            //Log.e("bmo", "Waiting for packet");
 
             try {
                 socket.receive(recievePacket);
+                mainWifiActivity.networkIndicators.setHostIndication(mainWifiActivity.networkIndicators.readyColor);
 
-                String stringData = new String(recievePacket.getData(), 0, recievePacket.getLength());
-                Log.e("bmo", "recieved Packet, contained " + stringData);
+                // podatki so tu ze v dataBuffer-ju
+                // potrebno jih je preoblikovati v array shortov, ki so jih audio metode zmozne
+                // predvajati
+
 
                 recieveCount++;
                 if (clientAddress == null) {
@@ -57,11 +66,13 @@ public class ServerThread implements Runnable {
                     Log.e("bmo", "Packet was recieved from" + clientAddress);
                 }
             } catch (IOException e) {
+                mainWifiActivity.networkIndicators.setHostIndication(mainWifiActivity.networkIndicators.dropoutColor);
+
                 if (e.getMessage() == null) {
                     Log.e("Recieve", "Unknown message");
                     continue;
                 } else {
-                    Log.e("Recieve", e.getMessage());
+                    Log.e("Recieved ", "Nonempty message");
                     continue;
                 }
             }

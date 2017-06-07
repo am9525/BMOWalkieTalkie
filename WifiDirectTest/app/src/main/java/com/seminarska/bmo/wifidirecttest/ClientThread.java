@@ -14,17 +14,21 @@ import java.net.InetAddress;
  */
 
 public class ClientThread implements Runnable {
-    InetAddress hostAddress;
-    int port = 0;
+
     DatagramSocket socket;
-
-    byte[] sendData = new byte[64];
-
+    int port = 0;
+    InetAddress hostAddress;
     int sendCount = 1;
+
+    byte[] sendData;
+
     boolean recording = false;
+
     private MainWifiActivity mainWifiActivity;
 
     public ClientThread(InetAddress hostAddress, int port, MainWifiActivity mainWifiActivity) {
+        sendData = new byte[mainWifiActivity.audio.MIN_BYTES];
+
         this.hostAddress = hostAddress;
         this.port = port;
         this.mainWifiActivity = mainWifiActivity;
@@ -38,13 +42,12 @@ public class ClientThread implements Runnable {
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     //pressed
-                    Log.d("bmo", "started client thread");
                     recording = true;
                 }
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     //released
-                    Log.d("bmo", "stopped client thread");
                     recording = false;
+                    mainWifiActivity.networkIndicators.setClientIndication(mainWifiActivity.networkIndicators.readyColor);
                 }
                 return true;
             }
@@ -58,6 +61,8 @@ public class ClientThread implements Runnable {
                             socket.setSoTimeout(1000);
                         }
                     } catch (IOException e) {
+                        mainWifiActivity.networkIndicators.setClientIndication(mainWifiActivity.networkIndicators.dropoutColor);
+
                         if (e.getMessage() == null) {
                             Log.e("Set Socket", "Unknown message");
                         } else {
@@ -65,21 +70,24 @@ public class ClientThread implements Runnable {
                         }
                     }
                     try {
-                        sendData = ("Hello" + sendCount).getBytes();
-                        sendCount++;
+                        // podatke (array short-ov) preoblikujemo v array byte-ov
+                        // ter jih posljemo
+
 
                         DatagramPacket packet = new DatagramPacket(sendData, sendData.length, hostAddress, port);
                         //packet sent
+                        sendCount++;
                         socket.send(packet);
-                        Log.e("bmo", "Client packet was sent");
+                        //Log.e("bmo", "Client packet was sent");
                     } catch (IOException e) {
+                        mainWifiActivity.networkIndicators.setClientIndication(mainWifiActivity.networkIndicators.dropoutColor);
+
                         if (e.getMessage() == null)
                             Log.e("bmo", "Unknown message: Timeout");
                         else
                             Log.e("Set Socket", e.getMessage());
                     }
                 }
-
             }
         }
     }

@@ -104,7 +104,7 @@ public class WifiDirectNetwork {
                     new Thread(clientThread).start();
                     super.onPostExecute(inetAddress);
                     //start the server thread
-                    serverThread = new ServerThread(hostPort);
+                    serverThread = new ServerThread(hostPort, mainWifiActivity);
                     new Thread(serverThread).start();
 
                     mainWifiActivity.makeToast("Connected!");
@@ -173,7 +173,7 @@ public class WifiDirectNetwork {
                     clientThread = new ClientThread(hostAddress, hostPort, mainWifiActivity);
                     new Thread(clientThread).start();
                     //start the server thread
-                    serverThread = new ServerThread(clientPort);
+                    serverThread = new ServerThread(clientPort, mainWifiActivity);
                     new Thread(serverThread).start();
 
                     mainWifiActivity.makeToast("Connected!");
