@@ -100,7 +100,7 @@ public class WifiDirectNetwork {
                 // po koncu izvedbe host threada - dobi client IP
                 @Override
                 protected void onPostExecute(InetAddress inetAddress) {
-                    clientThread = new ClientThread(inetAddress, clientPort, mainWifiActivity.fabRecord, isHost);
+                    clientThread = new ClientThread(inetAddress, clientPort, mainWifiActivity);
                     new Thread(clientThread).start();
                     super.onPostExecute(inetAddress);
                     //start the server thread
@@ -170,7 +170,7 @@ public class WifiDirectNetwork {
                 @Override
                 protected void onPostExecute(Void result) {
                     super.onPostExecute(result);
-                    clientThread = new ClientThread(hostAddress, hostPort, mainWifiActivity.fabRecord, isHost);
+                    clientThread = new ClientThread(hostAddress, hostPort, mainWifiActivity);
                     new Thread(clientThread).start();
                     //start the server thread
                     serverThread = new ServerThread(clientPort);

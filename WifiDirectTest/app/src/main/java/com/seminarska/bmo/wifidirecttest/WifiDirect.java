@@ -59,6 +59,7 @@ public class WifiDirect {
             @Override
             public void onFailure(int reason) {
                 mainWifiActivity.alertText.setText("Error: "+ stringReason[reason]);
+                Log.e("bmo", "Failed to discover peers");
             }
         });
     }

@@ -1,18 +1,19 @@
 package com.seminarska.bmo.wifidirecttest;
 
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,9 +24,16 @@ public class MainWifiActivity extends AppCompatActivity {
 
     protected FloatingActionButton fabSearch;
     protected FloatingActionButton fabRecord;
+
+    // audio self test gumb + event listener
     protected FloatingActionButton fabSelfTest;
+    private AudioSelfTest fabSelfTestListener;
 
     protected ArrayAdapter<String> wifiP2pArrayAdapter;
+
+    // indikatorji
+    protected FrameLayout hostActive;
+    protected FrameLayout clientActive;
 
     // low level manager, setup
     WifiDirect wifiDirect;
@@ -34,8 +42,6 @@ public class MainWifiActivity extends AppCompatActivity {
 
     // audio
     Audio audio;
-    // (zaenkrat) buffer za audio
-    short audioBuffer[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +52,6 @@ public class MainWifiActivity extends AppCompatActivity {
 
         // inicializiramo Audio del
         audio = new Audio();
-        audioBuffer = new short[audio.MIN_BYTES * 50];
 
         // inicializiramo kontrolnike
         super.onCreate(savedInstanceState);
@@ -76,89 +81,31 @@ public class MainWifiActivity extends AppCompatActivity {
         });
         // - gumb za zacetek posiljanja
         fabRecord = (FloatingActionButton) findViewById(R.id.fabSpeak);
-        /*
-        fabRecord.setOnTouchListener(new View.OnTouchListener(){
 
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_DOWN){
-                    //pressed
-                    Log.d("bmo", "started client thread");
-                    clientRunningThread.start();
-
-                }
-                if(event.getAction() == MotionEvent.ACTION_UP){
-                    //released
-                    Log.d("bmo", "stopped client thread");
-                    clientRunningThread.interrupt();
-                    return false;
-                }
-                return true;
-            }
-        });*/
         // gumb za selftest zvoka
         fabSelfTest = (FloatingActionButton) findViewById(R.id.fabSelfTest);
-        fabSelfTest.setOnTouchListener(new View.OnTouchListener() {
-            // indikator ali snemamo ali ne
-            boolean recording;
+        fabSelfTestListener = new AudioSelfTest(fabSelfTest, audio);
+        fabSelfTest.setOnTouchListener(fabSelfTestListener);
 
-            // handler za ui
-            Handler uiHandler = new Handler(Looper.getMainLooper());
+        // indikatorji za aktivnost (posiljanje)
+        hostActive = (FrameLayout) findViewById(R.id.hostActive);
+        clientActive = (FrameLayout) findViewById(R.id.clientActive);
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable(){
+            ColorDrawable activeColor = new ColorDrawable(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
+            ColorDrawable inactiveColor = new ColorDrawable(Color.TRANSPARENT);
+
+            boolean active = true;
 
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_DOWN){
-                    //pressed
-                    Log.d("bmo", "started client thread");
-                    recording = true;
-                    new Thread(new Runnable() {
-                        int recordingPointer=0;
-                        int playbackPointer=0;
-
-                        @Override
-                        public void run() {
-                            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
-
-                            audio.startRecording();
-                            int bytesRead;
-                            do
-                                recordingPointer += (bytesRead = audio.recordAudio(audioBuffer, recordingPointer));
-                            while(recording && bytesRead > 0);
-                            audio.stopRecording();
-
-                            // izklopimo gumb za snemanje
-                            uiHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    fabSelfTest.setEnabled(false);
-                                }
-                            });
-
-                            audio.startPlayback();
-                            int bytesWritten;
-                            do
-                                playbackPointer += (bytesWritten = audio.playAudio(audioBuffer, playbackPointer));
-                            while(playbackPointer < recordingPointer && bytesWritten > 0);
-                            audio.stopPlayback();
-
-                            // vklopimo gumb za snemanje
-                            uiHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    fabSelfTest.setEnabled(true);
-                                }
-                            });
-                        }
-                    }).start();
-                }
-                if(event.getAction() == MotionEvent.ACTION_UP){
-                    //released
-                    Log.d("bmo", "stopped client thread");
-                    recording = false;
-                }
-                return true;
+            public void run() {
+                hostActive.setForeground(active ? activeColor : inactiveColor);
+                active = !active;
+                handler.postDelayed(this, 500);
             }
-        });
+        }, 500);
+        //hostActive.setForeground();
     }
 
     @Override
