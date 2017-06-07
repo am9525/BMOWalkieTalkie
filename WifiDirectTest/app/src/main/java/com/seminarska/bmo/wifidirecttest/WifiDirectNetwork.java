@@ -82,7 +82,7 @@ public class WifiDirectNetwork {
                                 break;
                             }
                         } catch (IOException e) {
-                            mainWifiActivity.makeToast("Host handshake failed. Retrying...");
+                            Log.e("bmo","Host handshake failed. Retrying...");
                         }
                     }
                     try {
@@ -107,7 +107,7 @@ public class WifiDirectNetwork {
                     serverThread = new ServerThread(hostPort, mainWifiActivity);
                     new Thread(serverThread).start();
 
-                    mainWifiActivity.makeToast("Connected!");
+                    Log.i("bmo","Connected as host!");
                 }
             }.execute();
         } else {
@@ -160,7 +160,7 @@ public class WifiDirectNetwork {
                                 break;
                             }
                         } catch (IOException e) {
-                            mainWifiActivity.makeToast("Client handshake failed. Retrying...");
+                            Log.e("bmo", "Client handshake failed. Retrying...");
                         }
                     }
                     socket.close();
@@ -176,7 +176,7 @@ public class WifiDirectNetwork {
                     serverThread = new ServerThread(clientPort, mainWifiActivity);
                     new Thread(serverThread).start();
 
-                    mainWifiActivity.makeToast("Connected!");
+                    Log.i("bmo", "Connected as client!");
                 }
             }.execute();
         }
