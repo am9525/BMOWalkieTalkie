@@ -3,6 +3,7 @@ package com.seminarska.bmo.wifidirecttest;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -108,16 +109,26 @@ public class MainWifiActivity extends AppCompatActivity {
         fabSelfTest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("bmo_audio","start");
-                try {
-                    audio.recordAudio();
-                    audio.playAudio();
-                }
-                catch (InterruptedException | ExecutionException e) {
-                    Log.e("bmo_audio", "Got exception during audio selftest: "+e.toString());
-                    makeToast("Audio selftest failed");
-                }
-                makeToast("Audio selftest success");
+                Log.i("bmo_audio", "start");
+
+                // naredimo se en thread tu, da asinhrono caka na audio taske
+                new AsyncTask<Void, Void, Boolean>() {
+                    @Override
+                    protected Boolean doInBackground(Void... params) {
+                        try {
+                            Log.i("bmo_audio_record", Integer.toString(audio.recordAudio()));
+                            Log.i("bmo_audio_play", Integer.toString(audio.playAudio()));
+                            return true;
+                        } catch (InterruptedException | ExecutionException e) {
+                            Log.e("bmo_audio", "Got exception during audio selftest: " + e.toString());
+                            return false;
+                        }
+                    }
+                    @Override
+                    protected void onPostExecute(Boolean result) {
+                        makeToast("Audio selftest " + (result ? "succeded" : "failed"));
+                    }
+                }.execute();
             }
         });
     }

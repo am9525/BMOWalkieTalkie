@@ -51,30 +51,41 @@ import java.util.concurrent.FutureTask;
 public class Audio {
     // hardcodirane spremenljivke za snemanje
     private final int SAMPLE_RATE = 8000;
-    private final int MIN_BUF_MULT = 10; // veckratnik minimalne kapacitete bufferja
+    private final int MIN_BYTES;
+
+    private final int MIN_BUF_UNITS = 1;   // mnozitelj minimalne kapacitete bufferja
+                                            // to je 1 enota bufferja, ki se bere/pise v i/o
+    private final int BUF_UNIT_BYTES;
+
+    private final int BUF_UNITS = 100;       // mnozitelj enote bufferja (da dobimo cel buffer)
+    private final int WHOLE_BUF_BYTES;
 
     // buffer za snemanje (ki se bo kasneje tudi poslal)
-    private byte buffer[];
-    private final int bufferSize;
+    private short buffer[];
 
     // thread pool za taske
     private static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     public Audio() {
-        bufferSize = AudioTrack.getMinBufferSize(
+        MIN_BYTES = AudioTrack.getMinBufferSize(
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_OUT_MONO, // IN_MONO vrne napako
 
                 // zaenkrat direktno, izkaze se, da ce zelimo kompresijo, moramo poslati frame
                 // skozi MediaCodec
                 AudioFormat.ENCODING_PCM_8BIT
-        ) * MIN_BUF_MULT;
-        if(bufferSize == AudioTrack.ERROR || bufferSize == AudioTrack.ERROR_BAD_VALUE) {
+        );
+        if(MIN_BYTES == AudioTrack.ERROR || MIN_BYTES == AudioTrack.ERROR_BAD_VALUE) {
             Log.e("bmo_audio", "Failed to init Audio class");
+            BUF_UNIT_BYTES = 0;
+            WHOLE_BUF_BYTES = 0;
             return;
         }
-        Log.i("bmo_audio", String.format("%d B allocated for audio buffer", bufferSize));
-        buffer = new byte[bufferSize];
+        BUF_UNIT_BYTES = MIN_BYTES * MIN_BUF_UNITS;     // stevilo B enote snemanja/predvajanja
+        WHOLE_BUF_BYTES = BUF_UNIT_BYTES * BUF_UNITS;   // stevilo B celotnega bufferja
+
+        Log.i("bmo_audio", String.format("%d B allocated for audio buffer", WHOLE_BUF_BYTES));
+        buffer = new short[WHOLE_BUF_BYTES];
     }
 
     public int recordAudio() throws InterruptedException, ExecutionException {
@@ -87,14 +98,18 @@ public class Audio {
                 AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
                         SAMPLE_RATE,
                         AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_8BIT,
-                        bufferSize);
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        WHOLE_BUF_BYTES);
                 if(record.getState() != AudioRecord.STATE_INITIALIZED) {
                     Log.e("bmo_audio", "Failed to init recording");
                     return 0;
                 }
                 record.startRecording();
-                int bytesRead = record.read(buffer, 0, bufferSize);
+
+                int bytesRead = 0;
+                while(bytesRead < WHOLE_BUF_BYTES)
+                    bytesRead += record.read(buffer, bytesRead, BUF_UNIT_BYTES);
+
                 record.stop();
                 record.release();
 
@@ -120,18 +135,27 @@ public class Audio {
                         AudioManager.STREAM_MUSIC,
                         SAMPLE_RATE,
                         AudioFormat.CHANNEL_OUT_MONO,
-                        AudioFormat.ENCODING_PCM_8BIT,
-                        bufferSize,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        BUF_UNIT_BYTES, // enota, ki jo prenese v predvajanje
                         AudioTrack.MODE_STREAM
                 );
                 if(audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
                     Log.e("bmo_audio", "Failed to init playback");
                     return 0;
                 }
-
                 audioTrack.play();
-                int bytesWritten = audioTrack.write(buffer, 0, bufferSize);
-                audioTrack.stop();
+                int bytesWritten = 0;
+                for(int i=0; i<2; i++) {
+                    bytesWritten = 0;
+                    while (bytesWritten < WHOLE_BUF_BYTES)
+                        bytesWritten += audioTrack.write(buffer, bytesWritten, BUF_UNIT_BYTES);
+                }
+                // dummy pisanje, samo zato da AudioTrack prebere cel prejsnji buffer, to enoto pa
+                // ignorira
+                // https://stackoverflow.com/questions/22058290/android-audiotrack-stream-cuts-out-early
+                audioTrack.write(buffer, 0, BUF_UNIT_BYTES);
+
+                audioTrack.flush();
                 audioTrack.release();
 
                 return bytesWritten;
