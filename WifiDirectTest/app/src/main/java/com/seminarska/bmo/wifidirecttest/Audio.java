@@ -125,6 +125,14 @@ class Audio {
             bytesRead = record.read(buffer, bufferOffset, MIN_BYTES);
         return bytesRead;
     }
+    int recordAudioBuffer(short buffer[], int bufferOffset) {
+        int recordingPointer = bufferOffset;
+        int bytesRead = 0;
+        do
+            recordingPointer += (bytesRead = recordAudio(buffer, recordingPointer));
+        while (bytesRead > 0);
+        return recordingPointer;
+    }
     /*--------------------------------------------------------------------------------------------*/
     /**
      * Zahteva zacetek predvajanja vzorcev.
@@ -153,6 +161,14 @@ class Audio {
         if (bufferOffset+MIN_BYTES < buffer.length)
             bytesWritten = audioTrack.write(buffer, bufferOffset, MIN_BYTES);
         return bytesWritten;
+    }
+    int playAudioBuffer(short buffer[], int bufferOffset) {
+        int playbackPointer = bufferOffset;
+        int bytesWritten = 0;
+        do
+            playbackPointer += (bytesWritten = playAudio(buffer, playbackPointer));
+        while (bytesWritten > 0);
+        return playbackPointer;
     }
     /*--------------------------------------------------------------------------------------------*/
     // ko dokoncno prenehamo uporabljati source/sink

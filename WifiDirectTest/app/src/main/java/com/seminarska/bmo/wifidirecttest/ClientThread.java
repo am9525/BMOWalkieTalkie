@@ -29,8 +29,8 @@ public class ClientThread implements Runnable {
     private MainWifiActivity mainWifiActivity;
 
     public ClientThread(InetAddress hostAddress, int port, MainWifiActivity mainWifiActivity) {
-        sendData = new byte[mainWifiActivity.audio.MIN_BYTES];
-        audioData = new short[mainWifiActivity.audio.MIN_BYTES / 2];
+        sendData = new byte[mainWifiActivity.audio.MIN_BYTES * 10];
+        audioData = new short[sendData.length / 2];
 
         this.hostAddress = hostAddress;
         this.port = port;
@@ -39,9 +39,6 @@ public class ClientThread implements Runnable {
 
     @Override
     public void run() {
-        // vzpostavimo snemanje
-        mainWifiActivity.audio.startRecording();
-
         mainWifiActivity.fabRecord.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -77,8 +74,10 @@ public class ClientThread implements Runnable {
                     try {
                         // podatke (array short-ov) preoblikujemo v array byte-ov
                         // ter jih posljemo
-                        mainWifiActivity.audio.recordAudio(audioData, 0);
-
+                        // vzpostavimo snemanje
+                        mainWifiActivity.audio.startRecording();
+                        mainWifiActivity.audio.recordAudioBuffer(audioData, 0);
+                        mainWifiActivity.audio.stopRecording();
                         // shranimo v byte array - tu se kaze nepotrebna striktnost Jave, kajti namrec
                         // kljub temu da bi moral le drugace gledati na podatke, to ni mogoce narediti
                         // drugace kot pa ce jih ponovno v celoti skopiras

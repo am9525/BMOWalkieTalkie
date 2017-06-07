@@ -27,11 +27,11 @@ public class ServerThread implements Runnable {
     MainWifiActivity mainWifiActivity;
 
     public ServerThread(int port, MainWifiActivity mainWifiActivity) {
-        recievedData = new byte[mainWifiActivity.audio.MIN_BYTES];
+        recievedData = new byte[mainWifiActivity.audio.MIN_BYTES * 10];
         // potrebno zaradi pretvorbe
         // https://stackoverflow.com/questions/11930385/how-can-i-get-short-from-a-bytebuffer
         //dataBuffer = ByteBuffer.allocateDirect(mainWifiActivity.audio.MIN_BYTES);
-        audioData = new short[mainWifiActivity.audio.MIN_BYTES / 2];
+        audioData = new short[recievedData.length / 2];
 
         this.port = port;
         this.mainWifiActivity = mainWifiActivity;
@@ -39,9 +39,6 @@ public class ServerThread implements Runnable {
 
     @Override
     public void run() {
-        // vzpostavimo predvajanje
-        mainWifiActivity.audio.startPlayback();
-
         while (true) {
             mainWifiActivity.networkIndicators.setHostIndication(mainWifiActivity.networkIndicators.activeColor);
 
@@ -70,8 +67,12 @@ public class ServerThread implements Runnable {
                 // podatki so tu ze v dataBuffer-ju
                 // potrebno jih je preoblikovati v array shortov, ki so jih audio metode zmozne
                 // predvajati
-                ByteBuffer.wrap(recievedData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(audioData);
-                mainWifiActivity.audio.playAudio(audioData, 0); // dolzine ene enote
+                ByteBuffer.wrap(recievedData).order(ByteOrder.BIG_ENDIAN).asShortBuffer().get(audioData);
+
+                // vzpostavimo predvajanje
+                mainWifiActivity.audio.startPlayback();
+                mainWifiActivity.audio.playAudioBuffer(audioData, 0);
+                mainWifiActivity.audio.stopPlayback();
 
                 recieveCount++;
                 if (clientAddress == null) {
